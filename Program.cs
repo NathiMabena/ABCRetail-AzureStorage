@@ -1,7 +1,10 @@
+using ABCRetail.AzureStorage.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<TableStorageService>();
 
 var app = builder.Build();
 

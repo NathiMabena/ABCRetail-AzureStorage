@@ -1,0 +1,40 @@
+﻿@model ABCRetail.AzureStorage.Models.CustomerProductEntity
+
+@{
+    ViewData["Title"] = "Add Customer / Product";
+}
+
+<h4 class="mb-3">Add Customer / Product</h4>
+
+<div class="card" style="max-width: 500px;">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label">Customer Name</label>
+                <input asp-for="Name" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email</label>
+                <input asp-for="Email" class="form-control" type="email" required />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ProductName" class="form-label">Product Name</label>
+                <input asp-for="ProductName" class="form-control" required />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Price" class="form-label">Price (R)</label>
+                <input asp-for="Price" class="form-control" type="number" step="0.01" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg"></i> Save
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
