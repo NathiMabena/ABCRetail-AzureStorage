@@ -1,7 +1,7 @@
 ﻿@model ABCRetail.AzureStorage.Models.CustomerEntity
 
 @{
-    ViewData["Title"] = "Add Customer";
+    ViewData["Title"] = "Edit Customer";
 
     var countryOptions = new[]
     {
@@ -16,8 +16,12 @@
 <div class="row justify-content-center mt-4">
     <div class="col-lg-6 col-md-8">
         <div class="card-custom p-4 shadow-sm">
-            <form asp-action="Create" method="post" id="customerForm">
+            <form asp-action="Edit" method="post" id="customerForm">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Hidden keys required for Azure Table Storage updates -->
+                <input type="hidden" asp-for="PartitionKey" />
+                <input type="hidden" asp-for="RowKey" />
 
                 <div class="mb-4">
                     <label asp-for="Name" class="form-label fw-medium text-dark">Full Name</label>
@@ -44,7 +48,7 @@
                         <select id="countryCode" class="form-select px-2" style="max-width: 110px; border-radius: 0;">
                             @foreach (var c in countryOptions)
                             {
-                                <option value="@c.Code" data-maxlen="@c.MaxLen" data-country="@c.Name" selected="@(c.Code == "+27" ? "selected" : null)">
+                                <option value="@c.Code" data-maxlen="@c.MaxLen" data-country="@c.Name">
                                     @c.Flag @c.Code
                                 </option>
                             }
@@ -61,7 +65,7 @@
                 <div class="d-flex gap-2 justify-content-end">
                     <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
                     <button type="submit" class="btn btn-primary px-4 shadow-sm">
-                        <i class="bi bi-check2-circle me-1"></i> Save Customer
+                        <i class="bi bi-check2-circle me-1"></i> Save Changes
                     </button>
                 </div>
             </form>
@@ -95,6 +99,20 @@
                 ? countrySelect.value + numberInput.value
                 : '';
         }
+
+        // Parse existing phone back into dropdown and input
+        (function prefillFromExisting() {
+            const existing = '@Html.Raw(Model.Phone ?? "")';
+            if (!existing) return;
+
+            for (const option of countrySelect.options) {
+                if (existing.startsWith(option.value)) {
+                    countrySelect.value = option.value;
+                    numberInput.value = existing.substring(option.value.length);
+                    break;
+                }
+            }
+        })();
 
         numberInput.addEventListener('input', function () {
             this.value = this.value.replace(/\D/g, '').replace(/^0+/, '');

@@ -1,0 +1,91 @@
+﻿@model List<ABCRetail.AzureStorage.Models.OrderViewModel>
+
+@{
+    ViewData["Title"] = "Orders & Inventory";
+}
+
+<!-- Inject the button into the Layout's topbar -->
+@section TopbarActions {
+    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 border shadow-sm me-2 fs-6">
+        <i class="bi bi-stack me-1"></i> Queue: @ViewBag.QueueCount
+    </span>
+    <a asp-action="Create" class="btn btn-primary rounded-pill px-3 fw-medium shadow-sm">
+        <i class="bi bi-cart-plus me-1"></i> Place Order
+    </a>
+}
+
+<div class="card-custom p-3 bg-light border-0 mb-4 shadow-sm">
+    <p class="text-muted mb-0 small">
+        <i class="bi bi-info-circle me-1"></i> Placing an order creates a real Order record and sends a message to Azure Queue Storage. A background worker picks it up, decrements the product's stock, marks the order as Processed, and writes a log entry to Azure Files. Refresh this page to see the status update from "Pending" to "Processed".
+    </p>
+</div>
+
+<div class="card-custom overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-4 py-3 text-muted fw-semibold">Customer</th>
+                    <th class="py-3 text-muted fw-semibold">Product</th>
+                    <th class="py-3 text-muted fw-semibold text-center">Qty</th>
+                    <th class="py-3 text-muted fw-semibold">Status</th>
+                    <th class="text-end pe-4 py-3 text-muted fw-semibold">Order Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model == null || Model.Count == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="text-center border-0 py-5">
+                            <div class="d-flex flex-column align-items-center justify-content-center py-4">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                                    <i class="bi bi-cart-x fs-1"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">No orders found</h5>
+                                <p class="text-muted mb-4" style="max-width: 400px;">
+                                    Click "Place Order" to test the Azure Queue processing pipeline.
+                                </p>
+                                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-medium">
+                                    <i class="bi bi-cart-plus me-2"></i> Place First Order
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-medium text-dark">
+                                @if (order.CustomerName == "(unknown customer)")
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border fw-medium"><i class="bi bi-person-x"></i> Deleted Customer</span>
+                                }
+                                else
+                                {
+                                    @order.CustomerName
+                                }
+                            </td>
+                            <td class="fw-medium">@order.ProductName</td>
+                            <td class="text-center text-secondary">@order.Quantity</td>
+                            <td>
+                                @if (order.Status == "Processed")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="bi bi-check2-circle"></i> Processed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1"><i class="bi bi-hourglass-split"></i> Pending</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4 text-secondary small">
+                                @order.OrderDate.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

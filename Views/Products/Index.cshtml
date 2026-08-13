@@ -1,0 +1,125 @@
+﻿@model List<ABCRetail.AzureStorage.Models.ProductEntity>
+
+@{
+    ViewData["Title"] = "Products";
+}
+
+<!-- Inject the button into the Layout's topbar -->
+@section TopbarActions {
+    <a asp-action="Create" class="btn btn-primary rounded-pill px-3 fw-medium shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Add Product
+    </a>
+}
+
+<div class="row g-4">
+    @if (Model == null || Model.Count == 0)
+    {
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="card-custom p-5 text-center shadow-sm">
+                <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 72px; height: 72px;">
+                        <i class="bi bi-box-seam fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">No products found</h5>
+                    <p class="text-muted mb-4" style="max-width: 400px;">
+                        Your inventory is currently empty. Start building your catalog by adding your first product to Azure Table Storage.
+                    </p>
+                    <a asp-action="Create" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm fw-medium">
+                        <i class="bi bi-plus-lg me-2"></i> Add First Product
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <div class="col-xl-3 col-lg-4 col-md-6">
+                <div class="stat-card h-100 d-flex flex-column overflow-hidden border-0 shadow-sm" style="background: #fff;">
+
+                    <!-- Product Image Fixed (Full Width, Cover, No Padding) -->
+                    <div class="position-relative bg-light border-bottom" style="height: 200px;">
+                        @if (!string.IsNullOrEmpty(item.ImageBlobName))
+                        {
+                            <img src="@Url.Action("View", "Images", new { blobName = item.ImageBlobName })"
+                                 class="w-100 h-100" style="object-fit: cover; object-position: center;" alt="@item.Name" />
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center w-100 h-100">
+                                <i class="bi bi-image text-muted opacity-50" style="font-size: 2.5rem;"></i>
+                            </div>
+                        }
+
+                        <!-- Stock Badge Overlay -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            @if (item.StockQuantity <= 5)
+                            {
+                                <span class="badge bg-danger shadow-sm px-2 py-1">Low stock: @item.StockQuantity</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success shadow-sm px-2 py-1">In stock: @item.StockQuantity</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Product Details (Typography dialed down) -->
+                    <div class="card-body p-3 d-flex flex-column">
+                        <h6 class="fw-bold text-dark mb-1 text-truncate" title="@item.Name">@item.Name</h6>
+                        <p class="text-secondary fw-medium mb-auto" style="font-size: 0.95rem;">R@(item.Price.ToString("N2"))</p>
+
+                        <!-- Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <a asp-action="Edit" asp-route-partitionKey="@item.PartitionKey" asp-route-rowKey="@item.RowKey"
+                               class="btn btn-light border text-primary px-3 py-1.5 rounded-pill fw-medium shadow-sm" style="font-size: 0.875rem;">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </a>
+                            <button type="button" class="btn btn-light border text-danger rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 36px; height: 36px;"
+                                    onclick="openDeleteModal('@item.PartitionKey', '@item.RowKey', '@item.Name')">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark">Delete Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-secondary">
+                Are you sure you want to delete <strong id="deleteProductName" class="text-dark"></strong>? This action cannot be undone.
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <form asp-action="Delete" method="post" id="deleteForm">
+                    <input type="hidden" name="partitionKey" id="delPartitionKey" />
+                    <input type="hidden" name="rowKey" id="delRowKey" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openDeleteModal(partitionKey, rowKey, productName) {
+            document.getElementById('delPartitionKey').value = partitionKey;
+            document.getElementById('delRowKey').value = rowKey;
+            document.getElementById('deleteProductName').textContent = productName;
+            var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            myModal.show();
+        }
+    </script>
+}

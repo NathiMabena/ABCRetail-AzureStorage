@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Place Order";
+    var customers = ViewBag.Customers as List<ABCRetail.AzureStorage.Models.CustomerEntity>;
+    var products = ViewBag.Products as List<ABCRetail.AzureStorage.Models.ProductEntity>;
+}
+
+<h4 class="mb-3">Place Order</h4>
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="card" style="max-width: 500px;">
+    <div class="card-body">
+        @if (customers == null || customers.Count == 0 || products == null || products.Count == 0)
+        {
+            <p class="text-muted mb-0">
+                You need at least one customer and one product before you can place an order.
+                <a asp-controller="Customers" asp-action="Create">Add a customer</a> or
+                <a asp-controller="Products" asp-action="Create">add a product</a> first.
+            </p>
+        }
+        else
+        {
+            <form asp-action="Create" method="post">
+                <div class="mb-3">
+                    <label class="form-label">Customer</label>
+                    <select name="customerId" class="form-select" required>
+                        <option value="">-- Select a customer --</option>
+                        @foreach (var c in customers)
+                        {
+                            <option value="@c.RowKey">@c.Name (@c.Email)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Product</label>
+                    <select name="productId" class="form-select" required>
+                        <option value="">-- Select a product --</option>
+                        @foreach (var p in products)
+                        {
+                            <option value="@p.RowKey">@p.Name — R@(p.Price.ToString("N2")) (stock: @p.StockQuantity)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Quantity</label>
+                    <input name="quantity" type="number" class="form-control" min="1" value="1" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-cart-check"></i> Place Order
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </form>
+        }
+    </div>
+</div>

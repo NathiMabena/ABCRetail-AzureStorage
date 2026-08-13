@@ -1,0 +1,73 @@
+﻿@model ABCRetail.AzureStorage.Models.ProductEntity
+
+@{
+    ViewData["Title"] = "Edit Product";
+    var availableImages = ViewBag.AvailableImages as List<ABCRetail.AzureStorage.Services.BlobItemInfo>;
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-6 col-md-8">
+        <div class="card-custom p-4 shadow-sm">
+            <form asp-action="Edit" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Hidden keys required for Azure Table Storage updates -->
+                <input type="hidden" asp-for="PartitionKey" />
+                <input type="hidden" asp-for="RowKey" />
+
+                <div class="mb-4">
+                    <label asp-for="Name" class="form-label fw-medium text-dark">Product Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Wireless Headphones" required />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Price" class="form-label fw-medium text-dark">Price (ZAR)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light fw-medium">R</span>
+                        <input asp-for="Price" class="form-control" type="number" step="0.01" placeholder="0.00" required />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="StockQuantity" class="form-label fw-medium text-dark">Stock Quantity</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-layers"></i></span>
+                        <input asp-for="StockQuantity" class="form-control" type="number" placeholder="Enter total units available" required />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ImageBlobName" class="form-label fw-medium text-dark">Product Image</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-image"></i></span>
+                        <select asp-for="ImageBlobName" class="form-select">
+                            <option value="">-- Select an image --</option>
+                            @if (availableImages != null)
+                            {
+                                @foreach (var img in availableImages)
+                                {
+                                    <option value="@img.Name">@img.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="form-text mt-2">
+                        Need a new image? <a asp-controller="Images" asp-action="Index" target="_blank" class="text-decoration-none">Upload to Azure Blobs first</a>.
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted" />
+
+                <div class="d-flex gap-2 justify-content-end">
+                    <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

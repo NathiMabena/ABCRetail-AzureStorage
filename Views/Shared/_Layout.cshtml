@@ -1,9 +1,18 @@
-﻿<!DOCTYPE html>
+﻿@{
+    // This C# block must be at the top! It tells the sidebar which page is active.
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ABC Retail</title>
+
+    <!-- Google Fonts (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -11,55 +20,126 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
 
     <style>
-        body {
-            background-color: #f4f6f9;
+        :root {
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: #1e293b;
+            --sidebar-active: #2563eb;
+            --body-bg: #f8fafc;
+            --card-border: #e2e8f0;
         }
 
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--body-bg);
+            color: #1e293b;
+        }
+
+        /* Sidebar Styling */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 240px;
-            background-color: #1e2a38;
+            width: 250px;
+            background-color: var(--sidebar-bg);
             color: #fff;
-            padding-top: 1rem;
+            padding-top: 1.25rem;
+            z-index: 1000;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
         }
 
-        .sidebar .brand {
-            font-weight: 700;
-            font-size: 1.25rem;
-            padding: 0.75rem 1.25rem 1.5rem;
-            display: block;
-            color: #fff;
-        }
+            .sidebar .brand {
+                font-weight: 700;
+                font-size: 1.3rem;
+                letter-spacing: -0.02em;
+                padding: 0.5rem 1.5rem 1.75rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                color: #ffffff;
+                text-decoration: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                margin-bottom: 1rem;
+            }
 
-        .sidebar .nav-link {
-            color: #c7d0da;
-            padding: 0.65rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
+            .sidebar .nav-link {
+                color: #94a3b8;
+                padding: 0.75rem 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+                font-size: 0.925rem;
+                transition: all 0.2s ease;
+                border-left: 3px solid transparent;
+            }
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: #2a3b4d;
-            color: #fff;
-        }
+                .sidebar .nav-link:hover {
+                    color: #f8fafc;
+                    background-color: var(--sidebar-hover);
+                    border-left-color: #60a5fa;
+                }
 
+                .sidebar .nav-link.active {
+                    color: #ffffff;
+                    background-color: rgba(37, 99, 235, 0.15);
+                    border-left-color: var(--sidebar-active);
+                }
+
+        /* Main Wrapper */
         .main-wrapper {
-            margin-left: 240px;
+            margin-left: 250px;
+            min-height: 100vh;
         }
 
+        /* Topbar */
         .topbar {
-            background-color: #fff;
-            border-bottom: 1px solid #e3e6ea;
-            padding: 0.75rem 1.5rem;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
         .content-area {
-            padding: 1.5rem;
+            padding: 2rem;
+        }
+
+        /* Custom Card Styles */
+        .card-custom {
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+      
+        .modal-backdrop.show {
+            backdrop-filter: blur(5px);
+            background-color: rgba(15, 23, 42, 0.6); /* Sleek dark tint */
+        }
+        /* Interactive Hover Card Effect */
+        .stat-card {
+            border: 1px solid var(--card-border);
+            border-radius: 1rem;
+            background: #ffffff;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+            cursor: pointer;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-6px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+                border-color: #cbd5e1;
+            }
+
+        .icon-shape {
+            width: 48px;
+            height: 48px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
         }
     </style>
 </head>
@@ -68,42 +148,50 @@
     <!-- Sidebar -->
     <nav class="sidebar">
         <a class="brand" href="/">
-            <i class="bi bi-shop"></i> ABC Retail
+            <i class="bi bi-shop text-primary"></i> ABC Retail
         </a>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link" asp-controller="Home" asp-action="Index">
-                    <i class="bi bi-speedometer2"></i> Dashboard
+                <a class="nav-link @(currentController == "Dashboard" || currentController == "Home" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" asp-controller="Customers" asp-action="Index">
-                    <i class="bi bi-people"></i> Customers &amp; Products
+                <a class="nav-link @(currentController == "Customers" ? "active" : "")" asp-controller="Customers" asp-action="Index">
+                    <i class="bi bi-people-fill"></i> Customers
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" asp-controller="Images" asp-action="Index">
+                <a class="nav-link @(currentController == "Products" ? "active" : "")" asp-controller="Products" asp-action="Index">
+                    <i class="bi bi-box-seam-fill"></i> Products
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(currentController == "Images" ? "active" : "")" asp-controller="Images" asp-action="Index">
                     <i class="bi bi-images"></i> Images
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" asp-controller="Orders" asp-action="Index">
-                    <i class="bi bi-cart-check"></i> Orders &amp; Inventory
+                <a class="nav-link @(currentController == "Orders" ? "active" : "")" asp-controller="Orders" asp-action="Index">
+                    <i class="bi bi-cart-check-fill"></i> Orders
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" asp-controller="Logs" asp-action="Index">
-                    <i class="bi bi-file-earmark-text"></i> Logs
+                <a class="nav-link @(currentController == "Logs" ? "active" : "")" asp-controller="Logs" asp-action="Index">
+                    <i class="bi bi-file-earmark-code-fill"></i> Logs
                 </a>
             </li>
         </ul>
     </nav>
 
-    <!-- Main content -->
+    <!-- Main Content -->
     <div class="main-wrapper">
         <div class="topbar d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">@ViewData["Title"]</h5>
-            <span class="text-muted small">ABC Retail Internal Tool</span>
+            <h5 class="mb-0 fw-bold text-dark">@ViewData["Title"]</h5>
+            <div class="d-flex align-items-center gap-3">
+                <!-- This allows each page to inject its own specific action button -->
+                @await RenderSectionAsync("TopbarActions", required: false)
+            </div>
         </div>
 
         <div class="content-area">
@@ -111,11 +199,42 @@
         </div>
     </div>
 
-    <!-- Toast container (used later for notifications) -->
+    <!-- Toast Container -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
+   
+    @if (TempData["SuccessMessage"] != null || TempData["ErrorMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toastContainer = document.querySelector('.toast-container');
+                const isError = '@(TempData["ErrorMessage"] != null)' === 'True';
+                const message = '@Html.Raw(TempData["SuccessMessage"] ?? TempData["ErrorMessage"])';
+
+                const toastHtml = `
+                    <div class="toast align-items-center text-bg-${isError ? 'danger' : 'success'} border-0 show shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="transition: all 0.3s ease;">
+                        <div class="d-flex p-1">
+                            <div class="toast-body fw-medium">
+                                <i class="bi ${isError ? 'bi-exclamation-octagon-fill' : 'bi-check-circle-fill'} me-2 fs-6"></i>
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" onclick="this.closest('.toast').remove()"></button>
+                        </div>
+                    </div>`;
+
+                toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+                // Auto-hide the toast after 4.5 seconds
+                setTimeout(() => {
+                    const toastEl = toastContainer.querySelector('.toast');
+                    if(toastEl) toastEl.remove();
+                }, 4500);
+            });
+        </script>
+    }
 </body>
 </html>
