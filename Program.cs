@@ -1,5 +1,5 @@
 using ABCRetail.AzureStorage.Services;
-using ABCRetail.AzureStorage.Workers;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<TableStorageService>();
 builder.Services.AddSingleton<BlobStorageService>();
-builder.Services.AddHostedService<OrderProcessingWorker>();
+
 builder.Services.AddSingleton<QueueStorageService>();
 builder.Services.AddSingleton<FileStorageService>();
 

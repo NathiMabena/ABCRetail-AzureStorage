@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using ABCRetail.AzureStorage.Models;
 using ABCRetail.AzureStorage.Services;
 
@@ -6,92 +8,120 @@ namespace ABCRetail.AzureStorage.Controllers
 {
     public class OrdersController : Controller
     {
-        private readonly TableStorageService _tableStorageService;
-        private readonly QueueStorageService _queueStorageService;
-        private readonly FileStorageService _fileStorageService;
+        private readonly TableStorageService _tableService;
+        private readonly QueueStorageService _queueService;
+        private readonly FileStorageService _fileService;
 
         public OrdersController(
-            TableStorageService tableStorageService,
-            QueueStorageService queueStorageService,
-            FileStorageService fileStorageService)
+            TableStorageService tableService,
+            QueueStorageService queueService,
+            FileStorageService fileService)
         {
-            _tableStorageService = tableStorageService;
-            _queueStorageService = queueStorageService;
-            _fileStorageService = fileStorageService;
+            _tableService = tableService;
+            _queueService = queueService;
+            _fileService = fileService;
         }
 
-        // GET: /Orders
+        // --- 1. INDEX PAGE ---
         public async Task<IActionResult> Index()
         {
-            var orders = await _tableStorageService.GetAllByPartitionAsync<OrderEntity>("Order");
-            var customers = await _tableStorageService.GetAllByPartitionAsync<CustomerEntity>("Customer");
-            var products = await _tableStorageService.GetAllByPartitionAsync<ProductEntity>("Product");
+            var orders = await _tableService.GetAllOrdersAsync();
 
-            var customerLookup = customers.ToDictionary(c => c.RowKey, c => c.Name);
-            var productLookup = products.ToDictionary(p => p.RowKey, p => p.Name);
+            // Updates the Queue badge on your UI based on your actual method
+            ViewBag.QueueCount = await _queueService.GetApproximateMessageCountAsync();
 
-            var viewModels = orders
-                .OrderByDescending(o => o.OrderDate)
-                .Select(o => new OrderViewModel
-                {
-                    PartitionKey = o.PartitionKey,
-                    RowKey = o.RowKey,
-                    CustomerName = customerLookup.GetValueOrDefault(o.CustomerId, "(unknown customer)"),
-                    ProductName = productLookup.GetValueOrDefault(o.ProductId, "(unknown product)"),
-                    Quantity = o.Quantity,
-                    Status = o.Status,
-                    OrderDate = o.OrderDate
-                })
-                .ToList();
-
-            ViewBag.QueueCount = await _queueStorageService.GetApproximateMessageCountAsync();
-            return View(viewModels);
+            return View(orders);
         }
 
-        // GET: /Orders/Create
+        // --- 2. CREATE PAGE ---
         public async Task<IActionResult> Create()
         {
-            ViewBag.Customers = await _tableStorageService.GetAllByPartitionAsync<CustomerEntity>("Customer");
-            ViewBag.Products = await _tableStorageService.GetAllByPartitionAsync<ProductEntity>("Product");
+            // Fetch your existing customers and products from Table Storage
+            var customers = await _tableService.GetAllByPartitionAsync<CustomerEntity>("Customer");
+            var products = await _tableService.GetAllByPartitionAsync<ProductEntity>("Product");
+
+            // Pass them to the View so the dropdowns can see them
+            ViewBag.Customers = customers;
+            ViewBag.Products = products;
+
             return View();
         }
 
-        // POST: /Orders/Create
+        // --- 3. SUBMIT ORDER ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string customerId, string productId, int quantity)
+        public async Task<IActionResult> Create(OrderEntity newOrder)
         {
-            if (string.IsNullOrEmpty(customerId) || string.IsNullOrEmpty(productId) || quantity <= 0)
+            try
             {
-                ModelState.AddModelError(string.Empty, "Please select a customer, a product, and a valid quantity.");
-                ViewBag.Customers = await _tableStorageService.GetAllByPartitionAsync<CustomerEntity>("Customer");
-                ViewBag.Products = await _tableStorageService.GetAllByPartitionAsync<ProductEntity>("Product");
-                return View();
+                newOrder.RowKey = Guid.NewGuid().ToString();
+                newOrder.PartitionKey = "Order";
+                newOrder.Status = "Pending";
+                newOrder.Timestamp = DateTime.UtcNow;
+
+                // Save to Table Storage
+                await _tableService.AddOrderAsync(newOrder); // Ensure this method exists in your TableService
+
+                // Send to Queue Storage
+                await _queueService.SendMessageAsync(newOrder.RowKey);
+
+                TempData["SuccessMessage"] = "Order placed successfully! It is now pending in the queue.";
+                return RedirectToAction(nameof(Index));
             }
-
-            var order = new OrderEntity
+            catch (Exception ex)
             {
-                CustomerId = customerId,
-                ProductId = productId,
-                Quantity = quantity,
-                Status = "Pending",
-                OrderDate = DateTimeOffset.UtcNow
-            };
-
-            // Persist the order first so it exists when the worker looks it up
-            await _tableStorageService.AddEntityAsync(order);
-
-            // Send just the Order's RowKey — the worker looks up the full order from Table Storage
-            await _queueStorageService.SendMessageAsync(order.RowKey);
-
-            return RedirectToAction(nameof(Index));
+                TempData["ErrorMessage"] = $"Error placing order: {ex.Message}";
+                return View(newOrder);
+            }
         }
 
-        // GET: /Orders/ViewLog?fileName=...
-        public async Task<IActionResult> ViewLog(string fileName)
+        // --- 4. MANUAL BATCH PROCESSOR ---
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessPendingOrders()
         {
-            var content = await _fileStorageService.ReadLogAsync(fileName);
-            return Content(content, "text/plain");
+            try
+            {
+                int processedCount = 0;
+
+                // Grab the first message using your specific method
+                var message = await _queueService.ReceiveMessageAsync();
+
+                if (message == null)
+                {
+                    TempData["SuccessMessage"] = "The queue is already empty. No pending orders to process.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Loop as long as there are messages in the queue
+                while (message != null)
+                {
+                    string orderId = message.MessageText;
+
+                    // 1. Update Table Storage
+                    await _tableService.UpdateOrderStatusAsync(orderId, "Processed");
+
+                    // 2. Write the log using your exact method
+                    string logText = $"[{DateTime.UtcNow}] Processed Order ID {orderId} successfully.";
+                    await _fileService.WriteLogAsync(logText);
+
+                    // 3. Delete the message from the queue
+                    await _queueService.DeleteMessageAsync(message.MessageId, message.PopReceipt);
+
+                    processedCount++;
+
+                    // Check for the next message
+                    message = await _queueService.ReceiveMessageAsync();
+                }
+
+                TempData["SuccessMessage"] = $"Success! {processedCount} pending orders were processed and logged to Azure Files.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred while processing the queue: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }
