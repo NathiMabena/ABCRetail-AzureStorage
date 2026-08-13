@@ -45,7 +45,11 @@
                         <img src="@Url.Action("View", "Images", new { blobName = blob.Name })" class="w-100 h-100" style="object-fit: contain;" alt="@blob.Name" />
                     </div>
                     <div class="card-body p-3 d-flex flex-column text-center">
-                        <p class="small text-truncate text-muted mb-3 fw-medium" title="@blob.Name">@blob.Name</p>
+                        @{
+                            // This strips out the GUID prefix (everything before the first underscore) for a clean display
+                            var displayName = blob.Name.Contains('_') ? blob.Name.Substring(blob.Name.IndexOf('_') + 1) : blob.Name;
+                        }
+                        <p class="small text-truncate text-muted mb-3 fw-medium" title="@blob.Name">@displayName</p>
                         <button type="button" class="btn btn-sm btn-light border text-danger w-100 rounded-pill shadow-sm"
                                 onclick="openDeleteModal('@blob.Name')">
                             <i class="bi bi-trash3 me-1"></i> Delete
