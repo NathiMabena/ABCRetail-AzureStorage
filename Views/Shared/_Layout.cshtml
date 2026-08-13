@@ -1,5 +1,5 @@
 ﻿@{
-    // This C# block must be at the top! It tells the sidebar which page is active.
+   
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
 }
 <!DOCTYPE html>
@@ -34,19 +34,43 @@
             color: #1e293b;
         }
 
-        /* Sidebar Styling */
+        /* Sidebar Base (Collapsed State) */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 250px;
+            width: 80px; /* Start collapsed */
             background-color: var(--sidebar-bg);
             color: #fff;
             padding-top: 1.25rem;
             z-index: 1000;
             box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth slide out */
+            overflow-x: hidden; /* Hide content outside 80px */
+            white-space: nowrap; /* Prevent text wrapping when resizing */
         }
+
+            /* Sidebar Expanded State (Hover) */
+            .sidebar:hover {
+                width: 250px;
+                box-shadow: 8px 0 30px rgba(0, 0, 0, 0.15); /* Stronger shadow when floating over content */
+            }
+
+            /* Hide text spans by default */
+            .sidebar .brand span,
+            .sidebar .nav-link span {
+                opacity: 0;
+                transition: opacity 0.2s ease;
+                pointer-events: none;
+            }
+
+            /* Fade text in when sidebar is hovered */
+            .sidebar:hover .brand span,
+            .sidebar:hover .nav-link span {
+                opacity: 1;
+                transition-delay: 0.15s; /* Slight delay so the bar opens before text appears */
+            }
 
             .sidebar .brand {
                 font-weight: 700;
@@ -67,7 +91,7 @@
                 padding: 0.75rem 1.5rem;
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
+                gap: 1rem; /* Space between icon and text */
                 font-weight: 500;
                 font-size: 0.925rem;
                 transition: all 0.2s ease;
@@ -86,9 +110,9 @@
                     border-left-color: var(--sidebar-active);
                 }
 
-        /* Main Wrapper */
+        /* Main Content Wrapper */
         .main-wrapper {
-            margin-left: 250px;
+            margin-left: 80px; /* Lock this to the collapsed width so it doesn't push the page on hover */
             min-height: 100vh;
         }
 
@@ -112,11 +136,11 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
-      
         .modal-backdrop.show {
             backdrop-filter: blur(5px);
             background-color: rgba(15, 23, 42, 0.6); /* Sleek dark tint */
         }
+
         /* Interactive Hover Card Effect */
         .stat-card {
             border: 1px solid var(--card-border);
@@ -148,37 +172,42 @@
     <!-- Sidebar -->
     <nav class="sidebar">
         <a class="brand" href="/">
-            <i class="bi bi-shop text-primary"></i> ABC Retail
+            <i class="bi bi-shop text-primary"></i> <span>ABC Retail</span>
         </a>
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link @(currentController == "Dashboard" || currentController == "Home" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
-                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                <a class="nav-link @(currentController == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house-door-fill"></i> <span>Home</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(currentController == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">
+                    <i class="bi bi-grid-1x2-fill"></i> <span>Dashboard</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(currentController == "Customers" ? "active" : "")" asp-controller="Customers" asp-action="Index">
-                    <i class="bi bi-people-fill"></i> Customers
+                    <i class="bi bi-people-fill"></i> <span>Customers</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(currentController == "Products" ? "active" : "")" asp-controller="Products" asp-action="Index">
-                    <i class="bi bi-box-seam-fill"></i> Products
+                    <i class="bi bi-box-seam-fill"></i> <span>Products</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(currentController == "Images" ? "active" : "")" asp-controller="Images" asp-action="Index">
-                    <i class="bi bi-images"></i> Images
+                    <i class="bi bi-images"></i> <span>Images</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(currentController == "Orders" ? "active" : "")" asp-controller="Orders" asp-action="Index">
-                    <i class="bi bi-cart-check-fill"></i> Orders
+                    <i class="bi bi-cart-check-fill"></i> <span>Orders</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link @(currentController == "Logs" ? "active" : "")" asp-controller="Logs" asp-action="Index">
-                    <i class="bi bi-file-earmark-code-fill"></i> Logs
+                    <i class="bi bi-file-earmark-code-fill"></i> <span>Logs</span>
                 </a>
             </li>
         </ul>
@@ -206,7 +235,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 
-   
     @if (TempData["SuccessMessage"] != null || TempData["ErrorMessage"] != null)
     {
         <script>
