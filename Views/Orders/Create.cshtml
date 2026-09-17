@@ -1,58 +1,69 @@
-﻿@{
+﻿@model ABCRetail.AzureStorage.Models.OrderEntity
+@{
     ViewData["Title"] = "Place Order";
-    var customers = ViewBag.Customers as List<ABCRetail.AzureStorage.Models.CustomerEntity>;
-    var products = ViewBag.Products as List<ABCRetail.AzureStorage.Models.ProductEntity>;
 }
 
-<h4 class="mb-3">Place Order</h4>
+<div class="container-fluid mt-2">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card card-custom p-4 p-md-5">
+                <h5 class="fw-bold text-dark mb-4">Place Order</h5>
 
-<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
 
-<div class="card" style="max-width: 500px;">
-    <div class="card-body">
-        @if (customers == null || customers.Count == 0 || products == null || products.Count == 0)
-        {
-            <p class="text-muted mb-0">
-                You need at least one customer and one product before you can place an order.
-                <a asp-controller="Customers" asp-action="Create">Add a customer</a> or
-                <a asp-controller="Products" asp-action="Create">add a product</a> first.
-            </p>
-        }
-        else
-        {
-            <form asp-action="Create" method="post">
-                <div class="mb-3">
-                    <label class="form-label">Customer</label>
-                    <select name="customerId" class="form-select" required>
-                        <option value="">-- Select a customer --</option>
-                        @foreach (var c in customers)
-                        {
-                            <option value="@c.RowKey">@c.Name (@c.Email)</option>
-                        }
-                    </select>
-                </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-semibold">Customer</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <select name="CustomerRowKey" class="form-select" required>
+                                <option value="">-- Select a customer --</option>
+                                @if (ViewBag.Customers != null)
+                                {
+                                    foreach (var customer in ViewBag.Customers)
+                                    {
+                                        <option value="@customer.RowKey">@customer.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Product</label>
-                    <select name="productId" class="form-select" required>
-                        <option value="">-- Select a product --</option>
-                        @foreach (var p in products)
-                        {
-                            <option value="@p.RowKey">@p.Name — R@(p.Price.ToString("N2")) (stock: @p.StockQuantity)</option>
-                        }
-                    </select>
-                </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-semibold">Product</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-box-seam"></i></span>
+                            <select name="ProductRowKey" class="form-select" required>
+                                <option value="">-- Select a product --</option>
+                                @if (ViewBag.Products != null)
+                                {
+                                    foreach (var product in ViewBag.Products)
+                                    {
+                                        <option value="@product.RowKey">@product.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Quantity</label>
-                    <input name="quantity" type="number" class="form-control" min="1" value="1" required />
-                </div>
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-semibold">Quantity</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-hash"></i></span>
+                            <input type="number" name="Quantity" class="form-control" value="1" min="1" required />
+                        </div>
+                    </div>
 
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-cart-check"></i> Place Order
-                </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-            </form>
-        }
+                    <hr class="my-4 text-muted" style="opacity: 0.15;">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light border px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-cart-plus me-1"></i> Place Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>

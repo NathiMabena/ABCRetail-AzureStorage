@@ -1,6 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ABCRetail.AzureStorage.Models;
 using ABCRetail.AzureStorage.Services;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using System;
 
 namespace ABCRetail.AzureStorage.Controllers
 {
@@ -8,9 +14,19 @@ namespace ABCRetail.AzureStorage.Controllers
     {
         private readonly TableStorageService _tableStorageService;
 
-        public CustomersController(TableStorageService tableStorageService)
+        // Add these two fields for our Serverless HTTP calls
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
+
+        // Update the constructor to inject all three tools
+        public CustomersController(
+            TableStorageService tableStorageService,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration)
         {
             _tableStorageService = tableStorageService;
+            _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
         }
 
         // GET: /Customers
@@ -27,6 +43,7 @@ namespace ABCRetail.AzureStorage.Controllers
         }
 
         // POST: /Customers/Create
+        // THIS IS THE METHOD WE UPDATED TO USE SERVERLESS
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CustomerEntity entity)
@@ -36,8 +53,36 @@ namespace ABCRetail.AzureStorage.Controllers
                 return View(entity);
             }
 
-            await _tableStorageService.AddEntityAsync(entity);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                // 1. Get the base URL from appsettings.json
+                string baseUrl = _configuration["AzureFunctionsBaseUrl"] ?? "http://localhost:7193/api/";
+
+                // 2. Format the CustomerEntity data as a JSON payload
+                var jsonContent = new StringContent(
+                    JsonSerializer.Serialize(entity),
+                    Encoding.UTF8,
+                    "application/json");
+
+                // 3. Send the HTTP POST request to your Azure Function
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsync($"{baseUrl}table/insert", jsonContent);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Serverless API failed to save the customer.");
+                    return View(entity);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"Error connecting to Serverless API: {ex.Message}");
+                return View(entity);
+            }
         }
 
         // GET: /Customers/Edit
@@ -52,9 +97,6 @@ namespace ABCRetail.AzureStorage.Controllers
         }
 
         // POST: /Customers/Edit
-        // Note: we re-fetch the existing entity server-side rather than trusting the
-        // posted ETag, since Azure.ETag doesn't round-trip cleanly through MVC model
-        // binding from a hidden form field. Re-fetching guarantees a valid ETag.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(CustomerEntity entity)
@@ -77,6 +119,7 @@ namespace ABCRetail.AzureStorage.Controllers
             await _tableStorageService.UpdateEntityAsync(existing);
             return RedirectToAction(nameof(Index));
         }
+
         // POST: /Customers/Delete
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -85,13 +128,10 @@ namespace ABCRetail.AzureStorage.Controllers
             try
             {
                 await _tableStorageService.DeleteEntityAsync(partitionKey, rowKey);
-
-                // Pass a success message to the view
                 TempData["SuccessMessage"] = "Customer successfully deleted.";
             }
             catch (Exception)
             {
-                // If Azure throws an error (e.g., entity doesn't exist or network drop), catch it
                 TempData["ErrorMessage"] = "Failed to delete customer. They might have already been removed or the database is unreachable.";
             }
 

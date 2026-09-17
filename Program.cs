@@ -14,6 +14,8 @@ builder.Services.AddSingleton<FileStorageService>();
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options => { options.MultipartBodyLengthLimit = 100_000_000; });
 
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
