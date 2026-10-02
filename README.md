@@ -1,7 +1,5 @@
 # ABC Retail - Cloud Architecture & Serverless Backend
-
-**Author:** Nkosinathi Zimkhona Mabena  
-**Institution:** The Independent Institute of Education (IIE) Rosebank College  
+ 
 **Project Type:** ASP.NET Core MVC & Azure Functions  
 
 ## 📌 Project Overview
